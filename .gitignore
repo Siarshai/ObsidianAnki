@@ -1,0 +1,5 @@
+.benchmarks/
+.idea/
+.pytest_cache/
+__pycache__
+anki_progress.pkl
