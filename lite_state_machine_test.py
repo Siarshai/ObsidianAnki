@@ -98,6 +98,25 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(10, counter)
 
     @timeout_decorator.timeout(0.1, timeout_exception=StopIteration)
+    def test_none_equals_current_state(self):
+        counter = 0
+
+        def increment_counter(s, c):
+            nonlocal counter
+            counter += 1
+
+        def head_exit_on_counter(s, c):
+            nonlocal counter
+            return counter != 10
+
+        sm = LiteStateMachine(TestStates.BEGIN)
+        sm.set_on_state_cb(TestStates.BEGIN, lambda s, c: None)
+        sm.set_default_on_transition_cb(increment_counter)
+        sm.set_head_step_cb(head_exit_on_counter)
+        sm.start_main_loop()
+        self.assertEqual(10, counter)
+
+    @timeout_decorator.timeout(0.1, timeout_exception=StopIteration)
     def test_state_loops_and_default_on_state_cb_work(self):
         counter = 0
 

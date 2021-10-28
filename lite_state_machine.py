@@ -58,6 +58,8 @@ class LiteStateMachine(object):
                 else:
                     new_state = self._on_state_cbs[self._current_state](self._current_state, self._context)
 
+                if new_state is None:
+                    new_state = self._current_state
                 transition_key = (self._current_state, new_state)
                 if transition_key not in self._on_transition_cbs:
                     if self._default_on_transition_cb:

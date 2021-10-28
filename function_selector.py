@@ -27,7 +27,7 @@ class FunctionSelector:
 
     def get_help(self) -> str:
         ss = StringIO()
-        ss.write("Known commands:")
+        ss.write("Known commands:\n")
         for input_variants, (_, hint) in self._functions.items():
             for v in input_variants[:-1]:
                 ss.write(v)
