@@ -127,11 +127,13 @@ def get_on_answer_displayed(selector):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("path_to_questions", help="Path to folder to be recursively searched for .md files")
+    parser.add_argument("--prune", help="Remove old records from progress data when encountered",
+                        action="store_true")
     args = parser.parse_args()
     try:
         path_to_questions = Path(args.path_to_questions)
     except Exception as e:
-        print(f"Could not convert path_to_questions to path: {args.path_to_questions}")
+        print(f"Could not convert path_to_questions to path: {args.path_to_questions}: {str(e)}")
         return -1
     if not path_to_questions.exists():
         print(f"Path does not exist: {args.path_to_questions}")
@@ -140,7 +142,7 @@ def main():
         print(f"Path is not a directory: {args.path_to_questions}")
         return -1
 
-    qselector = QuestionSelector(path_to_questions)
+    qselector = QuestionSelector(path_to_questions, args.prune)
     state_machine = LiteStateMachine(State.QUESTION_REQUIRED)
     state_machine.set_head_step_cb(lambda s, c: s != State.EXITING)
     state_machine.set_on_state_cb(State.QUESTION_REQUIRED, get_on_question_required(qselector))

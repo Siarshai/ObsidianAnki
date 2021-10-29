@@ -8,10 +8,10 @@ from weight_handler import WeightHandler
 
 
 class QuestionSelector:
-    def __init__(self, path_to_questions: Path):
+    def __init__(self, path_to_questions: Path, with_prune: bool):
         self._path_to_questions = path_to_questions
+        self._with_prune = with_prune
         progress = QuestionSelector._load_saved_progress()
-
         self.current_question_path: Optional[Path] = None
         self._wh: Optional[WeightHandler] = None
         self._reload_index_impl(progress)
@@ -36,7 +36,8 @@ class QuestionSelector:
     def _reload_index_impl(self, progress):
         question_uids = self._load_questions_list()
         self._wh = WeightHandler(question_uids, time.time(), progress)
-        self._wh.prune_progress_info(lambda uid: uid not in question_uids)
+        if self._with_prune:
+            self._wh.prune_progress_info(lambda uid: uid not in question_uids)
         self.current_question_path: Optional[Path] = None
 
     def success_on_current_question(self):
