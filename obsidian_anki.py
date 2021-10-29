@@ -14,10 +14,15 @@ class State(str, Enum):
     EXITING = "EXITING"
 
 
+def clear_screen():
+    print("\033[H\033[J")
+
+
 def get_on_question_required(selector):
     def on_question_required(state, context):
+        clear_screen()
         question = selector.load_next_question()
-        print(question)
+        print(question, end="")
         return state.QUESTION_DISPLAYED
 
     return on_question_required
