@@ -49,7 +49,7 @@ class QuestionSelector(WeightHandlerMixin):
             with open(progress_filepath, "wb") as fh:
                 pickle.dump(
                     {
-                        "version": 1,
+                        "version": 2,
                         "progress": self.progress
                     }, fh)
         except OSError:
