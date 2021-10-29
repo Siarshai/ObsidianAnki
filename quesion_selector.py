@@ -47,6 +47,10 @@ class QuestionSelector(WeightHandlerMixin):
         progress_filepath = Path("anki_progress.pkl")
         try:
             with open(progress_filepath, "wb") as fh:
-                pickle.dump(self.progress, fh)
+                pickle.dump(
+                    {
+                        "version": 1,
+                        "progress": self.progress
+                    }, fh)
         except OSError:
             print("WARNING: Could not save progress data")
