@@ -32,8 +32,8 @@ class FunctionSelectorTest(unittest.TestCase):
 
     def test_hint(self):
         self.assertTrue(
-            FunctionSelectorTest._fs_ut.get_hint() == "n/y" or
-            FunctionSelectorTest._fs_ut.get_hint() == "y/n")
+            FunctionSelectorTest._fs_ut.get_hint() == "(n/y)" or
+            FunctionSelectorTest._fs_ut.get_hint() == "(y/n)")
 
 
 if __name__ == '__main__':

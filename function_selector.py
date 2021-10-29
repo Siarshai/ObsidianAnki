@@ -23,7 +23,7 @@ class FunctionSelector:
         raise StopIteration("Not found")
 
     def get_hint(self) -> str:
-        return "/".join(input_variants[0] for input_variants in self._functions.keys())
+        return "(" + "/".join(input_variants[0] for input_variants in self._functions.keys()) + ")"
 
     def get_help(self) -> str:
         ss = StringIO()
