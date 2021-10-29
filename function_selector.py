@@ -1,12 +1,13 @@
+from collections import OrderedDict
 from io import StringIO
 from typing import Dict, Tuple, Callable, Any, Iterable, Optional
 
 
 class FunctionSelector:
     def __init__(self):
-        self._functions: Dict[Tuple[str], Tuple[Callable[[], Any], Optional[str]]] = {}
+        self._functions: OrderedDict[Tuple[str], Tuple[Callable[..., Any], Optional[str]]] = OrderedDict()
 
-    def set_on_command_function(self, inputs: Iterable[str], fn: Callable[[], Any], hint: Optional[str] = None):
+    def set_on_command_function(self, inputs: Iterable[str], fn: Callable[..., Any], hint: Optional[str] = None):
         inputs = tuple(i.lower() for i in inputs)
         for existing_input_variants in self._functions.keys():
             for v in existing_input_variants:
@@ -15,11 +16,11 @@ class FunctionSelector:
                                        f"already registered input {existing_input_variants}")
         self._functions[inputs] = (fn, hint)
 
-    def __call__(self, input_string: str):
+    def __call__(self, input_string: str, *args, **kwargs):
         input_string = input_string.lower()
         for input_variants, (fn, _) in self._functions.items():
             if any(input_string == v for v in input_variants):
-                return fn()
+                return fn(*args, **kwargs)
         raise StopIteration("Not found")
 
     def get_hint(self) -> str:

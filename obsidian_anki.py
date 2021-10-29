@@ -29,26 +29,34 @@ def get_on_question_required(selector):
 
 
 def get_on_question_displayed(selector):
-    def yes():
+    def yes(*args, **kwargs):
         for line in selector.load_answer_for_current_question():
             print(line, end="")
         return State.ANSWER_DISPLAYED
 
     function_selector = FunctionSelector()
     function_selector.set_on_command_function(
-        ("y", "yes"), yes, "Show answer for displayed question")
+        ("y", "yes"),
+        yes,
+        "Show answer for displayed question")
     function_selector.set_on_command_function(
-        ("s", "skip"), lambda: State.QUESTION_REQUIRED, "Show next question")
+        ("s", "skip"),
+        lambda *args, **kwargs: State.QUESTION_REQUIRED,
+        "Show next question")
     function_selector.set_on_command_function(
-        ("x", "exit"), lambda: State.EXITING, "Exit program")
+        ("x", "exit"),
+        lambda *args, **kwargs: State.EXITING,
+        "Exit program")
     function_selector.set_on_command_function(
-        ("?", "h", "help"), lambda: print(function_selector.get_help()), "Show this hint")
+        ("?", "h", "help"),
+        lambda *args, **kwargs: print(function_selector.get_help()),
+        "Show this hint")
 
     def on_question_displayed(state, context):
         print("\n---")
         command = input(f"Continue? {function_selector.get_hint()}\n")
         try:
-            return function_selector(command)
+            return function_selector(command, state, context)
         except StopIteration:
             print(f"Unknown command: {command}")
             print(function_selector.get_help())
@@ -58,29 +66,37 @@ def get_on_question_displayed(selector):
 
 
 def get_on_answer_displayed(selector):
-    def yes():
+    def yes(*args, **kwargs):
         selector.success_on_current_question()
         return State.QUESTION_REQUIRED
 
-    def no():
+    def no(*args, **kwargs):
         selector.fail_on_current_question()
         return State.QUESTION_REQUIRED
 
     function_selector = FunctionSelector()
     function_selector.set_on_command_function(
-        ("y", "yes"), yes, "Answer was correct, this question will be shown less frequently")
+        ("y", "yes"),
+        yes,
+        "Answer was correct, this question will be shown less frequently")
     function_selector.set_on_command_function(
-        ("n", "no"), no, "Answer was not correct, this question will be shown more frequently")
+        ("n", "no"),
+        no,
+        "Answer was not correct, this question will be shown more frequently")
     function_selector.set_on_command_function(
-        ("x", "exit"), lambda: State.EXITING, "Show this hint")
+        ("x", "exit"),
+        lambda *args, **kwargs: State.EXITING,
+        "Show this hint")
     function_selector.set_on_command_function(
-        ("?", "h", "help"), lambda: print(function_selector.get_help()), "Show this hint")
+        ("?", "h", "help"),
+        lambda *args, **kwargs: print(function_selector.get_help()),
+        "Show this hint")
 
     def on_answer_displayed(state, context):
         print("\n---")
         command = input(f"Was your answer right? {function_selector.get_hint()}\n")
         try:
-            return function_selector(command)
+            return function_selector(command, state, context)
         except StopIteration:
             print(f"Unknown command: {command}")
             print(function_selector.get_help())
