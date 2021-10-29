@@ -39,9 +39,16 @@ def get_on_question_required(selector):
 
 def get_on_question_displayed(selector):
     def yes(*args, **kwargs):
-        for line in selector.load_answer_for_current_question():
-            print(line, end="")
-        return State.ANSWER_DISPLAYED
+        try:
+            for line in selector.load_answer_for_current_question():
+                print(line, end="")
+            return State.ANSWER_DISPLAYED
+        except OSError as e:
+            print(f"WARNING: {str(e)}")
+            print("Have you renamed file while program was running?")
+            print("Restoring index...")
+            selector.reload_index()
+            return State.QUESTION_REQUIRED
 
     function_selector = FunctionSelector()
     function_selector.set_on_command_function(

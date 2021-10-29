@@ -1,11 +1,11 @@
 import unittest
 
-from weight_handler import WeightHandlerMixin
+from weight_handler import WeightHandler
 
 
 class WeightHandlerTest(unittest.TestCase):
     def test_weights_are_equal_by_default_no_saved_state(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2", "path/question3"],
             1001000,
             None)
@@ -13,7 +13,7 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertTrue(all(wh.weights[0] == w for w in wh.weights))
 
     def test_weights_are_equal_by_default_partial_saved_state(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2", "path/question3"],
             1000100,
             {
@@ -35,7 +35,7 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertTrue(all(wh.weights[0] == w for w in wh.weights))
 
     def test_weights_depend_on_previous_successes(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000100,
             {
@@ -57,7 +57,7 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertLess(wh.weights[0], wh.weights[1])
 
     def test_weights_depend_on_previous_failures(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000100,
             {
@@ -79,7 +79,7 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertGreater(wh.weights[0], wh.weights[1])
 
     def test_weights_depend_on_time(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000100,
             {
@@ -101,7 +101,7 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertLess(wh.weights[0], wh.weights[1])
 
     def test_weights_depend_on_previous_hotness(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000100,
             {
@@ -125,7 +125,7 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertGreater(wh.weights[0], wh.weights[1])
 
     def test_weights_updated_after_success(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000000,
             None)
@@ -133,7 +133,7 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertGreater(wh.weights[0], wh.weights[1])
 
     def test_weights_updated_after_failure(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000000,
             None)
@@ -141,27 +141,27 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertLess(wh.weights[0], wh.weights[1])
 
     def test_weights_record_kept_after_success(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000000,
             None)
-        self.assertEqual(len(wh.progress), 0)
+        self.assertEqual(len(wh._progress), 0)
         wh.success_on_question("path/question2", 1000000)
-        self.assertEqual(len(wh.progress), 1)
-        self.assertGreater(len(wh.progress["path/question2"]), 0)
+        self.assertEqual(len(wh._progress), 1)
+        self.assertGreater(len(wh._progress["path/question2"]), 0)
 
     def test_weights_record_kept_after_failure(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000000,
             None)
-        self.assertEqual(len(wh.progress), 0)
+        self.assertEqual(len(wh._progress), 0)
         wh.fail_on_question("path/question2")
-        self.assertEqual(len(wh.progress), 1)
-        self.assertGreater(len(wh.progress["path/question2"]), 0)
+        self.assertEqual(len(wh._progress), 1)
+        self.assertGreater(len(wh._progress["path/question2"]), 0)
 
     def test_weight_relaxed_gradually_after_wrong_then_correct_answer(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000000,
             None)
@@ -170,7 +170,7 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertLess(wh.weights[0], wh.weights[1])  # still greater!
 
     def test_prune(self):
-        wh = WeightHandlerMixin(
+        wh = WeightHandler(
             ["path/question1", "path/question2"],
             1000100,
             {
@@ -188,10 +188,10 @@ class WeightHandlerTest(unittest.TestCase):
                     }
                 }
             })
-        self.assertEqual(len(wh.progress), 2)
+        self.assertEqual(len(wh._progress), 2)
         wh.prune_progress_info(lambda question_uid: "question2" in question_uid)
-        self.assertEqual(len(wh.progress), 1)
-        self.assertGreater(len(wh.progress["path/question1"]), 0)
+        self.assertEqual(len(wh._progress), 1)
+        self.assertGreater(len(wh._progress["path/question1"]), 0)
 
 
 if __name__ == '__main__':
