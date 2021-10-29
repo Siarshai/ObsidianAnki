@@ -19,8 +19,17 @@ def clear_screen():
 
 
 def get_on_question_required(selector):
+    def print_streak_message(streak):
+        if streak == 30:
+            print("That's 30 questions answered correctly in a row! Congratulations!\n---\n")
+        elif streak == 20:
+            print("That's 20 questions answered correctly in a row! Good job!\n---\n")
+        elif streak == 10:
+            print("That's 10 questions answered correctly in a row! Keep on going!\n---\n")
+
     def on_question_required(state, context):
         clear_screen()
+        print_streak_message(context.get("right_answers_streak", 0))
         question = selector.load_next_question()
         print(question, end="")
         return state.QUESTION_DISPLAYED
@@ -56,7 +65,7 @@ def get_on_question_displayed(selector):
         print("\n---")
         command = input(f"Continue? {function_selector.get_hint()}\n")
         try:
-            return function_selector(command, state, context)
+            return function_selector(command, context=context)
         except StopIteration:
             print(f"Unknown command: {command}")
             print(function_selector.get_help())
@@ -67,10 +76,13 @@ def get_on_question_displayed(selector):
 
 def get_on_answer_displayed(selector):
     def yes(*args, **kwargs):
+        ctx = kwargs["context"]
+        ctx["right_answers_streak"] = ctx.get("right_answers_streak", 0) + 1
         selector.success_on_current_question()
         return State.QUESTION_REQUIRED
 
     def no(*args, **kwargs):
+        kwargs["context"]["right_answers_streak"] = 0
         selector.fail_on_current_question()
         return State.QUESTION_REQUIRED
 
@@ -96,7 +108,7 @@ def get_on_answer_displayed(selector):
         print("\n---")
         command = input(f"Was your answer right? {function_selector.get_hint()}\n")
         try:
-            return function_selector(command, state, context)
+            return function_selector(command, context=context)
         except StopIteration:
             print(f"Unknown command: {command}")
             print(function_selector.get_help())
