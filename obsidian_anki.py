@@ -129,6 +129,7 @@ def main():
     parser.add_argument("path_to_questions", help="Path to folder to be recursively searched for .md files")
     parser.add_argument("--prune", help="Remove old records from progress data when encountered",
                         action="store_true")
+    parser.add_argument("--path_to_save_data_dir", help="Save and locate statistics save file here", default=None)
     args = parser.parse_args()
     try:
         path_to_questions = Path(args.path_to_questions)
@@ -141,8 +142,13 @@ def main():
     if not path_to_questions.is_dir():
         print(f"Path is not a directory: {args.path_to_questions}")
         return -1
+    try:
+        path_to_save_data_dir = Path(args.path_to_save_data_dir) if args.path_to_save_data_dir is not None else None
+    except Exception as e:
+        print(f"Could not convert path_to_save_data_dir to path: {args.path_to_save_data_dir}: {str(e)}")
+        return -1
 
-    qselector = QuestionSelector(path_to_questions, args.prune)
+    qselector = QuestionSelector(path_to_questions, args.prune, path_to_save_data_dir)
     state_machine = LiteStateMachine(State.QUESTION_REQUIRED)
     state_machine.set_head_step_cb(lambda s, c: s != State.EXITING)
     state_machine.set_on_state_cb(State.QUESTION_REQUIRED, get_on_question_required(qselector))

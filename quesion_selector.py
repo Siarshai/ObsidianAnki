@@ -8,10 +8,10 @@ from weight_handler import WeightHandler
 
 
 class QuestionSelector:
-    def __init__(self, path_to_questions: Path, with_prune: bool):
+    def __init__(self, path_to_questions: Path, with_prune: bool, path_to_save_data_dir: Optional[Path] = None):
         self._path_to_questions = path_to_questions
         self._with_prune = with_prune
-        progress = QuestionSelector._load_saved_progress()
+        progress = QuestionSelector._load_saved_progress(path_to_save_data_dir)
         self.current_question_path: Optional[Path] = None
         self._wh: Optional[WeightHandler] = None
         self._reload_index_impl(progress)
@@ -47,8 +47,22 @@ class QuestionSelector:
         self._wh.fail_on_question(self.current_question_path)
 
     @staticmethod
-    def _load_saved_progress():
-        progress_filepath = Path("anki_progress.pkl")
+    def _load_saved_progress(path_to_save_data_dir: Optional[Path] = None):
+        def _resolve_path_to_save_file():
+            if path_to_save_data_dir is not None:
+                if not path_to_save_data_dir.exists():
+                    path_to_save_data_dir.mkdir(parents=True)
+                elif not path_to_save_data_dir.is_dir():
+                    raise OSError("Specified path to save data is not a dir")
+            if path_to_save_data_dir is None:
+                path_to_save_data = "anki_progress.pkl"
+            else:
+                path_to_save_data = path_to_save_data_dir.joinpath("anki_progress.pkl")
+            return path_to_save_data
+
+        path_to_save_data_file = _resolve_path_to_save_file()
+
+        progress_filepath = Path(path_to_save_data_file)
         if progress_filepath.exists():
             with open(progress_filepath, "rb") as fh:
                 anki_progress = pickle.load(fh)
