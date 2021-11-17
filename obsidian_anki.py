@@ -126,32 +126,40 @@ def get_on_answer_displayed(selector):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("path_to_questions", help="Path to folder to be recursively searched for .md files")
-    parser.add_argument("--prune", help="Remove old records from progress data when encountered",
+    parser.add_argument("--prune",
+                        help="Remove old records from progress data when encountered",
                         action="store_true")
-    parser.add_argument("--path_to_save_data_dir", help="Save and locate statistics save file here", default=None)
+    parser.add_argument("--save_data_dir",
+                        metavar="PATH",
+                        help="Save and locate statistics save file in this directory",
+                        default=None)
+    parser.add_argument("--questions_dirs",
+                        metavar="PATH",
+                        help="Directories to be recursively searched for .md files",
+                        nargs="+")
     args = parser.parse_args()
     try:
-        path_to_questions = Path(args.path_to_questions)
+        paths_to_questions = [Path(p) for p in args.questions_dirs]
     except Exception as e:
-        print(f"Could not convert path_to_questions to path: {args.path_to_questions}: {str(e)}")
+        print(f"Could not convert questions_dirs to path: {str(e)}")
         return -1
-    if not path_to_questions.exists():
-        print(f"Path does not exist: {args.path_to_questions}")
-        return -1
-    if not path_to_questions.is_dir():
-        print(f"Path is not a directory: {args.path_to_questions}")
-        return -1
+    for dirpath in paths_to_questions:
+        if not dirpath.exists():
+            print(f"Path does not exist: {dirpath}")
+            return -1
+        if not dirpath.is_dir():
+            print(f"Path is not a directory: {str(dirpath)}")
+            return -1
     try:
-        path_to_save_data_dir = Path(args.path_to_save_data_dir) if args.path_to_save_data_dir is not None else None
+        save_data_dir = Path(args.save_data_dir) if args.save_data_dir is not None else None
     except Exception as e:
-        print(f"Could not convert path_to_save_data_dir to path: {args.path_to_save_data_dir}: {str(e)}")
+        print(f"Could not convert save_data_dir to path: {args.save_data_dir}: {str(e)}")
         return -1
 
     try:
-        qselector = QuestionSelector(path_to_questions, args.prune, path_to_save_data_dir)
+        qselector = QuestionSelector(paths_to_questions, args.prune, save_data_dir)
     except RuntimeError as e:
-        print(f"No questions loaded from path {args.path_to_questions}")
+        print(f"{str(e)}; specified paths: {', '.join(args.questions_dirs)}")
         return -1
     state_machine = LiteStateMachine(State.QUESTION_REQUIRED)
     state_machine.set_head_step_cb(lambda s, c: s != State.EXITING)

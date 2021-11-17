@@ -2,14 +2,16 @@ import pickle
 import random
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from weight_handler import WeightHandler
 
 
 class QuestionSelector:
-    def __init__(self, path_to_questions: Path, with_prune: bool, path_to_save_data_dir: Optional[Path] = None):
-        self._path_to_questions = path_to_questions
+    def __init__(self, paths_to_questions: List[Path],
+                 with_prune: bool,
+                 path_to_save_data_dir: Optional[Path] = None):
+        self._paths_to_questions = paths_to_questions
         self._with_prune = with_prune
         progress = QuestionSelector._load_saved_progress(path_to_save_data_dir)
         self.current_question_path: Optional[Path] = None
@@ -20,7 +22,8 @@ class QuestionSelector:
             raise RuntimeError("No questions loaded")
 
     def _load_questions_list(self):
-        return [p for p in self._path_to_questions.rglob("*.md")]
+        mds_globs = [dirpath.rglob("*.md") for dirpath in self._paths_to_questions]
+        return [p for glob in mds_globs for p in glob]
 
     def load_next_question(self):
         def _get_distinct_from_last_question():
