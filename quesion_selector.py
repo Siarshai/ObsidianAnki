@@ -8,6 +8,8 @@ from weight_handler import WeightHandler
 
 
 class QuestionSelector:
+    _MAX_HISTORY = 10
+
     def __init__(self, paths_to_questions: List[Path],
                  with_prune: bool,
                  path_to_save_data_dir: Optional[Path] = None):
@@ -15,7 +17,7 @@ class QuestionSelector:
         self._with_prune = with_prune
         progress = QuestionSelector._load_saved_progress(path_to_save_data_dir)
         self.current_question_path: Optional[Path] = None
-        self._last_question_path: Optional[Path] = None
+        self.history: List[Path] = []
         self._wh: Optional[WeightHandler] = None
         self._reload_index_impl(progress)
         if not len(self._wh.question_uids):
@@ -28,11 +30,15 @@ class QuestionSelector:
     def load_next_question(self):
         def _get_distinct_from_last_question():
             question = random.choices(self._wh.question_uids, weights=self._wh.weights)[0]
-            while question == self._last_question_path:
-                question = random.choices(self._wh.question_uids, weights=self._wh.weights)[0]
+            if self.history:
+                while question == self.history[-1]:
+                    question = random.choices(self._wh.question_uids, weights=self._wh.weights)[0]
             return question
 
-        self._last_question_path = self.current_question_path
+        if self.current_question_path:
+            self.history.append(self.current_question_path)
+        if len(self.history) > QuestionSelector._MAX_HISTORY:
+            self.history.pop(0)
         self.current_question_path = _get_distinct_from_last_question()
         return self.current_question_path.stem
 

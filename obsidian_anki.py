@@ -50,6 +50,12 @@ def get_on_question_displayed(selector):
             selector.reload_index()
             return State.QUESTION_REQUIRED
 
+    def history(*args, **kwargs):
+        print("\nLast answered questions:")
+        for question in selector.history[::-1]:
+            print(question)
+        return None
+
     function_selector = FunctionSelector()
     function_selector.set_on_command_function(
         ("y", "yes"),
@@ -60,11 +66,15 @@ def get_on_question_displayed(selector):
         lambda *args, **kwargs: State.QUESTION_REQUIRED,
         "Show next question")
     function_selector.set_on_command_function(
+        ("h", "history"),
+        history,
+        "Show history of recent questions")
+    function_selector.set_on_command_function(
         ("x", "exit"),
         lambda *args, **kwargs: State.EXITING,
         "Exit program")
     function_selector.set_on_command_function(
-        ("?", "h", "help"),
+        ("?", "help"),
         lambda *args, **kwargs: print(function_selector.get_help()),
         "Show this hint")
 
