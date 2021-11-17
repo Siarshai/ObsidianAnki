@@ -65,6 +65,10 @@ class QuestionSelector:
     def fail_on_current_question(self):
         self._wh.fail_on_question(self.current_question_path)
 
+    def reask_last_question(self):
+        if self.history:
+            self._wh.reask(self.history[-1])
+
     @staticmethod
     def _load_saved_progress(path_to_save_data_dir: Optional[Path] = None):
         def _resolve_path_to_save_file():

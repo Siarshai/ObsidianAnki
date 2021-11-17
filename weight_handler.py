@@ -28,6 +28,7 @@ class WeightHandler:
     ]
 
     CURRENT_PROGRESS_DATA_VERSION = 2
+    REASK_WEIGHT_MULTIPLICATION_COEFF = 5
 
     def __init__(self, question_uids, start_ts, progress=None):
         # consciously not updating current ts after start to evade updating every weight on each step
@@ -70,6 +71,13 @@ class WeightHandler:
             info["failures"] += 1
             info["is_hot"] = True  # make it hot - ask it soon
             self.weights[i] = self._compute_weight(info)
+        except StopIteration:
+            raise RuntimeError(f"WARNING: Could not find path for question {question}")
+
+    def reask(self, question):
+        try:
+            i, _ = next((i, uid) for (i, uid) in enumerate(self.question_uids) if question == uid)
+            self.weights[i] *= WeightHandler.REASK_WEIGHT_MULTIPLICATION_COEFF
         except StopIteration:
             raise RuntimeError(f"WARNING: Could not find path for question {question}")
 

@@ -70,6 +70,10 @@ def get_on_question_displayed(selector):
         history,
         "Show history of recent questions")
     function_selector.set_on_command_function(
+        ("r", "reask"),
+        lambda *args, **kwargs: selector.reask_last_question(),
+        "Reask last question after a little while (stacks)")
+    function_selector.set_on_command_function(
         ("x", "exit"),
         lambda *args, **kwargs: State.EXITING,
         "Exit program")

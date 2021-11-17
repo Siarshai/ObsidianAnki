@@ -117,12 +117,40 @@ class WeightHandlerTest(unittest.TestCase):
                         "successes": 1,
                         "failures": 0,
                         "last_answered_ts": 1000000,
-                        "is_hot": 0
+                        "is_hot": False
                     }
                 }
             })
         self.assertEqual(len(wh.weights), 2)
         self.assertGreater(wh.weights[0], wh.weights[1])
+
+    def test_reask_increases_weight(self):
+        wh = WeightHandler(
+            ["path/question1", "path/question2"],
+            1000100,
+            {
+                "version": 1,
+                "progress": {
+                    "path/question1": {
+                        "successes": 1,
+                        "failures": 0,
+                        "last_answered_ts": 1000000,
+                        "is_hot": True
+                    },
+                    "path/question2": {
+                        "successes": 1,
+                        "failures": 0,
+                        "last_answered_ts": 1000000,
+                        "is_hot": True
+                    }
+                }
+            })
+        self.assertEqual(wh.weights[0], wh.weights[1])
+        wh.reask("path/question1")
+        self.assertGreater(wh.weights[0], wh.weights[1])
+        weight_after_first_reask = wh.weights[0]
+        wh.reask("path/question1")
+        self.assertGreater(wh.weights[0], weight_after_first_reask)
 
     def test_weights_updated_after_success(self):
         wh = WeightHandler(
