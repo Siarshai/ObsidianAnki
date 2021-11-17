@@ -148,7 +148,11 @@ def main():
         print(f"Could not convert path_to_save_data_dir to path: {args.path_to_save_data_dir}: {str(e)}")
         return -1
 
-    qselector = QuestionSelector(path_to_questions, args.prune, path_to_save_data_dir)
+    try:
+        qselector = QuestionSelector(path_to_questions, args.prune, path_to_save_data_dir)
+    except RuntimeError as e:
+        print(f"No questions loaded from path {args.path_to_questions}")
+        return -1
     state_machine = LiteStateMachine(State.QUESTION_REQUIRED)
     state_machine.set_head_step_cb(lambda s, c: s != State.EXITING)
     state_machine.set_on_state_cb(State.QUESTION_REQUIRED, get_on_question_required(qselector))

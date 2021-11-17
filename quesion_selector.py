@@ -13,14 +13,24 @@ class QuestionSelector:
         self._with_prune = with_prune
         progress = QuestionSelector._load_saved_progress(path_to_save_data_dir)
         self.current_question_path: Optional[Path] = None
+        self._last_question_path: Optional[Path] = None
         self._wh: Optional[WeightHandler] = None
         self._reload_index_impl(progress)
+        if not len(self._wh.question_uids):
+            raise RuntimeError("No questions loaded")
 
     def _load_questions_list(self):
         return [p for p in self._path_to_questions.rglob("*.md")]
 
     def load_next_question(self):
-        self.current_question_path = random.choices(self._wh.question_uids, weights=self._wh.weights)[0]
+        def _get_distinct_from_last_question():
+            question = random.choices(self._wh.question_uids, weights=self._wh.weights)[0]
+            while question == self._last_question_path:
+                question = random.choices(self._wh.question_uids, weights=self._wh.weights)[0]
+            return question
+
+        self._last_question_path = self.current_question_path
+        self.current_question_path = _get_distinct_from_last_question()
         return self.current_question_path.stem
 
     def load_answer_for_current_question(self):
