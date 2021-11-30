@@ -230,6 +230,30 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertEqual(len(wh._progress), 1)
         self.assertGreater(len(wh._progress["path/question1"]), 0)
 
+    def test_statistics(self):
+        wh = WeightHandler(
+            ["path/question1", "path/question2"],
+            1000100,
+            {
+                "version": 3,
+                "progress": {
+                    "path/question1": {
+                        "successes": 1,
+                        "failures": 0,
+                        "answered": 2,
+                    },
+                    "path/question2": {
+                        "successes": 2,
+                        "failures": 4,
+                        "answered": 3,
+                    }
+                }
+            })
+        statistics = wh.get_statistics()
+        self.assertEqual(statistics["successes"], 3)
+        self.assertEqual(statistics["failures"], 4)
+        self.assertEqual(statistics["answered"], 5)
+
 
 if __name__ == '__main__':
     unittest.main()

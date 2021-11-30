@@ -100,6 +100,18 @@ class WeightHandler:
         except StopIteration:
             raise RuntimeError(f"WARNING: Could not find path for question {question}")
 
+    def get_statistics(self):
+        statistics = {
+            "successes": 0,
+            "failures": 0,
+            "answered": 0,
+        }
+        for info in self._progress.values():
+            statistics["successes"] += info.get("successes", 0)
+            statistics["failures"] += info.get("failures", 0)
+            statistics["answered"] += info.get("answered", 0)
+        return statistics
+
     def reask(self, question):
         try:
             i, _ = next((i, uid) for (i, uid) in enumerate(self.question_uids) if question == uid)

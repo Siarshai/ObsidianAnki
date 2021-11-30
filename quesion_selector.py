@@ -73,6 +73,9 @@ class QuestionSelector:
         if self.history:
             self._wh.reask(self.history[-1])
 
+    def get_statistics(self):
+        return self._wh.get_statistics()
+
     @staticmethod
     def _resolve_path_to_save_file(path_to_save_data_dir):
         if path_to_save_data_dir is not None:

@@ -11,6 +11,7 @@ class State(str, Enum):
     QUESTION_REQUIRED = "QUESTION_REQUIRED",
     QUESTION_DISPLAYED = "QUESTION_DISPLAYED",
     ANSWER_DISPLAYED = "ANSWER_DISPLAYED",
+    STATISTICS_SHOWN = "STATISTICS_SHOWN",
     EXITING = "EXITING"
 
 
@@ -50,12 +51,6 @@ def get_on_question_displayed(selector):
             selector.reload_index()
             return State.QUESTION_REQUIRED
 
-    def history(*args, **kwargs):
-        print("\nLast answered questions:")
-        for question in selector.history[::-1]:
-            print(question)
-        return None
-
     function_selector = FunctionSelector()
     function_selector.set_on_command_function(
         ("y", "yes"),
@@ -66,13 +61,9 @@ def get_on_question_displayed(selector):
         lambda *args, **kwargs: State.QUESTION_REQUIRED,
         "Show next question")
     function_selector.set_on_command_function(
-        ("h", "history"),
-        history,
-        "Show history of recent questions")
-    function_selector.set_on_command_function(
-        ("r", "reask"),
-        lambda *args, **kwargs: selector.reask_last_question(),
-        "Reask last question after a little while (stacks)")
+        ("stats",),
+        lambda *args, **kwargs: State.STATISTICS_SHOWN,
+        "Show last answered questions and other statistics")
     function_selector.set_on_command_function(
         ("x", "exit"),
         lambda *args, **kwargs: State.EXITING,
@@ -147,6 +138,53 @@ def get_on_answer_displayed(selector):
     return on_answer_displayed
 
 
+def get_on_statistics_shown(selector):
+    def pretty_print_statistics(*args, **kwargs):
+        statistics = selector.get_statistics()
+        print("Total answered questions: ", statistics["answered"])
+        print("Correctly: ", statistics["successes"])
+        print("Somewhat correctly: ", statistics["answered"] - statistics["failures"] - statistics["successes"])
+        print("Incorrectly: ", statistics["failures"])
+        return None
+
+    function_selector = FunctionSelector()
+    function_selector.set_on_command_function(
+        ("s", "statistics"),
+        pretty_print_statistics,
+        "Show more robust statistics over all answered questions")
+    function_selector.set_on_command_function(
+        ("r", "reask"),
+        lambda *args, **kwargs: selector.reask_last_question(),
+        "Reask last question after a little while (stacks)")
+    function_selector.set_on_command_function(
+        ("c", "continue"),
+        lambda *args, **kwargs: State.QUESTION_REQUIRED,
+        "Continue answering questions")
+    function_selector.set_on_command_function(
+        ("?", "h", "help"),
+        lambda *args, **kwargs: print(function_selector.get_help()),
+        "Show this hint")
+
+    def on_question_displayed(state, context):
+        print("\n---")
+        if selector.history:
+            print("\nLast answered questions:")
+            for question in selector.history[::-1]:
+                print(question)
+        else:
+            print("\nNo questions yet been answered")
+        print("\n---")
+        command = input(f"What to do next? {function_selector.get_hint()}\n")
+        try:
+            return function_selector(command, context=context)
+        except StopIteration:
+            print(f"Unknown command: {command}")
+            print(function_selector.get_help())
+        return None
+
+    return on_question_displayed
+    
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prune",
@@ -189,6 +227,7 @@ def main():
     state_machine.set_on_state_cb(State.QUESTION_REQUIRED, get_on_question_required(qselector))
     state_machine.set_on_state_cb(State.QUESTION_DISPLAYED, get_on_question_displayed(qselector))
     state_machine.set_on_state_cb(State.ANSWER_DISPLAYED, get_on_answer_displayed(qselector))
+    state_machine.set_on_state_cb(State.STATISTICS_SHOWN, get_on_statistics_shown(qselector))
     state_machine.set_on_state_cb(State.EXITING, lambda s, c: exit(0))
     state_machine.set_default_on_transition_cb(lambda tup, c: None)
 
