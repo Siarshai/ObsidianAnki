@@ -39,7 +39,7 @@ def get_on_question_required(selector):
 
 
 def get_on_question_displayed(selector):
-    def yes(*args, **kwargs):
+    def show_answer(*args, **kwargs):
         try:
             for line in selector.load_answer_for_current_question():
                 print(line, end="")
@@ -53,21 +53,21 @@ def get_on_question_displayed(selector):
 
     function_selector = FunctionSelector()
     function_selector.set_on_command_function(
-        ("y", "yes"),
-        yes,
+        ("c", "continue"),
+        show_answer,
         "Show answer for displayed question")
     function_selector.set_on_command_function(
-        ("s", "skip"),
+        ("n", "next"),
         lambda *args, **kwargs: State.QUESTION_REQUIRED,
         "Show next question")
     function_selector.set_on_command_function(
-        ("stats",),
+        ("s", "stats"),
         lambda *args, **kwargs: State.STATISTICS_SHOWN,
         "Show last answered questions and other statistics")
     function_selector.set_on_command_function(
         ("x", "exit"),
         lambda *args, **kwargs: State.EXITING,
-        "Exit program")
+        "Exit program, save data")
     function_selector.set_on_command_function(
         ("?", "help"),
         lambda *args, **kwargs: print(function_selector.get_help()),
@@ -119,7 +119,7 @@ def get_on_answer_displayed(selector):
     function_selector.set_on_command_function(
         ("x", "exit"),
         lambda *args, **kwargs: State.EXITING,
-        "Show this hint")
+        "Exit program, save data")
     function_selector.set_on_command_function(
         ("?", "h", "help"),
         lambda *args, **kwargs: print(function_selector.get_help()),
