@@ -52,6 +52,7 @@ class WeightHandler:
             return {}
         if progress["version"] <= 2:
             for info in progress["progress"].values():
+                info["answered"] = info.get("successes", 0) + info.get("failures", 0)
                 info["last_success_ts"] = info.get("last_answered_ts", 0)
                 del info["last_answered_ts"]
         return progress["progress"]
