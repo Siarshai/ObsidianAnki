@@ -4,7 +4,7 @@ from pathlib import Path
 
 from function_selector import FunctionSelector
 from lite_state_machine import LiteStateMachine
-from quesion_selector import QuestionSelector
+from question_selector import QuestionSelector
 
 
 class State(str, Enum):
