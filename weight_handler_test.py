@@ -168,6 +168,15 @@ class WeightHandlerTest(unittest.TestCase):
         wh.fail_on_question("path/question2")
         self.assertLess(wh.weights[0], wh.weights[1])
 
+    def test_weights_updated_after_ambiguity(self):
+        wh = WeightHandler(
+            ["path/question1", "path/question2"],
+            1000000,
+            None)
+        self.assertEqual(wh.weights[0], wh.weights[1])
+        wh.ambiguity_on_question("path/question2")
+        self.assertLess(wh.weights[0], wh.weights[1])
+
     def test_weights_record_kept_after_success(self):
         wh = WeightHandler(
             ["path/question1", "path/question2"],

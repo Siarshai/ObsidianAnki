@@ -66,6 +66,9 @@ class QuestionSelector:
     def fail_on_current_question(self):
         self._wh.fail_on_question(self.current_question_path)
 
+    def ambiguity_on_current_question(self):
+        self._wh.ambiguity_on_question(self.current_question_path)
+
     def reask_last_question(self):
         if self.history:
             self._wh.reask(self.history[-1])

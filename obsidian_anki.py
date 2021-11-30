@@ -107,11 +107,20 @@ def get_on_answer_displayed(selector):
         selector.fail_on_current_question()
         return State.QUESTION_REQUIRED
 
+    def somewhat(*args, **kwargs):
+        selector.ambiguity_on_current_question()
+        return State.QUESTION_REQUIRED
+
     function_selector = FunctionSelector()
     function_selector.set_on_command_function(
         ("y", "yes"),
         yes,
         "Answer was correct, this question will be shown less frequently")
+    function_selector.set_on_command_function(
+        ("s", "somewhat"),
+        somewhat,
+        "Answer was somewhat correct. Do not record question as failure, "
+        "but show a little more frequently (as in reask command)")
     function_selector.set_on_command_function(
         ("n", "no"),
         no,
