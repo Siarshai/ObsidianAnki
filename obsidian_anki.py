@@ -31,8 +31,8 @@ def get_on_question_required(selector):
     def on_question_required(state, context):
         clear_screen()
         print_streak_message(context.get("right_answers_streak", 0))
-        question = selector.load_next_question()
-        print(question, end="")
+        question, tag = selector.load_next_question()
+        print(tag, "/", question, end="")
         return state.QUESTION_DISPLAYED
 
     return on_question_required

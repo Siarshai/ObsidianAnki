@@ -2,7 +2,7 @@ import pickle
 import random
 import time
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from weight_handler import WeightHandler
 
@@ -21,12 +21,12 @@ class QuestionSelector:
         self.history: List[Path] = []
         self._wh: Optional[WeightHandler] = None
         self._reload_index_impl(progress)
-        if not len(self._wh.question_uids):
-            raise RuntimeError("No questions loaded")
 
-    def _load_questions_list(self):
-        mds_globs = [dirpath.rglob("*.md") for dirpath in self._paths_to_questions]
-        return [p for glob in mds_globs for p in glob]
+    def _load_questions_list(self) -> Dict[Path, str]:
+        result = {}
+        for dirpath in self._paths_to_questions:
+            result.update({p: dirpath.stem for p in dirpath.rglob("*.md")})
+        return result
 
     def load_next_question(self):
         def _get_distinct_from_last_question():
@@ -34,14 +34,14 @@ class QuestionSelector:
             if self.history:
                 while question == self.history[-1]:
                     question = random.choices(self._wh.question_uids, weights=self._wh.weights)[0]
-            return question
+            return question, self._wh.question_uids_to_tags[question]
 
         if self.current_question_path:
             self.history.append(self.current_question_path)
         if len(self.history) > QuestionSelector._MAX_HISTORY:
             self.history.pop(0)
-        self.current_question_path = _get_distinct_from_last_question()
-        return self.current_question_path.stem
+        self.current_question_path, tag = _get_distinct_from_last_question()
+        return self.current_question_path.stem, tag
 
     def load_answer_for_current_question(self):
         try:
@@ -54,10 +54,10 @@ class QuestionSelector:
         self._reload_index_impl(self._wh.get_savable_progress())
 
     def _reload_index_impl(self, progress):
-        question_uids = self._load_questions_list()
-        self._wh = WeightHandler(question_uids, time.time(), progress)
+        question_uids_to_tags = self._load_questions_list()
+        self._wh = WeightHandler(question_uids_to_tags, time.time(), progress)
         if self._with_prune:
-            self._wh.prune_progress_info(lambda uid: uid not in question_uids)
+            self._wh.prune_progress_info()
         self.current_question_path: Optional[Path] = None
 
     def success_on_current_question(self):

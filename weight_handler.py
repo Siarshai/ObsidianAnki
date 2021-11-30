@@ -34,13 +34,16 @@ class WeightHandler:
     CURRENT_PROGRESS_DATA_VERSION = 3
     REASK_WEIGHT_MULTIPLICATION_COEFF = 5
 
-    def __init__(self, question_uids: List[str], start_ts: int, progress: Optional[Dict] = None):
+    def __init__(self, question_uids_to_tags: Dict, start_ts: float, progress: Optional[Dict] = None):
         # consciously not updating current ts after start to evade updating every weight on each step
         # this is mostly useless - user won't likely keep program running more than day
         self._start_ts = start_ts
         self._progress = WeightHandler._migrate_progress(progress)
-        self.question_uids = question_uids
+        self.question_uids_to_tags = question_uids_to_tags
+        self.question_uids = list(question_uids_to_tags.keys())
         self.weights = [self._compute_weight(self._progress.get(uid, {})) for uid in self.question_uids]
+        if not len(self.question_uids):
+            raise RuntimeError("No questions loaded")
 
     @staticmethod
     def _migrate_progress(progress):
@@ -63,8 +66,8 @@ class WeightHandler:
             "progress": deepcopy(self._progress)
         }
 
-    def prune_progress_info(self, predicate_to_delete):
-        self._progress = {k: v for k, v in self._progress.items() if not predicate_to_delete(k)}
+    def prune_progress_info(self):
+        self._progress = {k: v for k, v in self._progress.items() if k in self.question_uids}
 
     def success_on_question(self, question, ts):
         try:

@@ -6,7 +6,7 @@ from weight_handler import WeightHandler
 class WeightHandlerTest(unittest.TestCase):
     def test_weights_are_equal_by_default_no_saved_state(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2", "path/question3"],
+            {"path/question1": "tag", "path/question2": "tag", "path/question3": "tag"},
             1001000,
             None)
         self.assertEqual(len(wh.weights), 3)
@@ -14,7 +14,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_are_equal_by_default_partial_saved_state(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2", "path/question3"],
+            {"path/question1": "tag", "path/question2": "tag", "path/question3": "tag"},
             1000100,
             {
                 "version": 1,
@@ -36,7 +36,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_depend_on_previous_successes(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000100,
             {
                 "version": 1,
@@ -58,7 +58,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_depend_on_previous_failures(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000100,
             {
                 "version": 1,
@@ -80,7 +80,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_depend_on_time(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000100,
             {
                 "version": 1,
@@ -102,7 +102,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_depend_on_previous_hotness(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000100,
             {
                 "version": 1,
@@ -126,7 +126,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_reask_increases_weight(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000100,
             {
                 "version": 1,
@@ -154,7 +154,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_updated_after_success(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000000,
             None)
         wh.success_on_question("path/question2", 1000000)
@@ -162,7 +162,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_updated_after_failure(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000000,
             None)
         wh.fail_on_question("path/question2")
@@ -170,7 +170,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_updated_after_ambiguity(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000000,
             None)
         self.assertEqual(wh.weights[0], wh.weights[1])
@@ -179,7 +179,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_record_kept_after_success(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000000,
             None)
         self.assertEqual(len(wh._progress), 0)
@@ -189,7 +189,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weights_record_kept_after_failure(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000000,
             None)
         self.assertEqual(len(wh._progress), 0)
@@ -199,7 +199,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_weight_relaxed_gradually_after_wrong_then_correct_answer(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000000,
             None)
         wh.fail_on_question("path/question2")
@@ -208,7 +208,7 @@ class WeightHandlerTest(unittest.TestCase):
 
     def test_prune(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag"},
             1000100,
             {
                 "version": 1,
@@ -226,13 +226,13 @@ class WeightHandlerTest(unittest.TestCase):
                 }
             })
         self.assertEqual(len(wh._progress), 2)
-        wh.prune_progress_info(lambda question_uid: "question2" in question_uid)
+        wh.prune_progress_info()
         self.assertEqual(len(wh._progress), 1)
         self.assertGreater(len(wh._progress["path/question1"]), 0)
 
     def test_statistics(self):
         wh = WeightHandler(
-            ["path/question1", "path/question2"],
+            {"path/question1": "tag", "path/question2": "tag"},
             1000100,
             {
                 "version": 3,
@@ -253,6 +253,14 @@ class WeightHandlerTest(unittest.TestCase):
         self.assertEqual(statistics["successes"], 3)
         self.assertEqual(statistics["failures"], 4)
         self.assertEqual(statistics["answered"], 5)
+
+    def test_retrieve_tags(self):
+        wh = WeightHandler(
+            {"path/question1": "tag1", "path/question2": "tag2"},
+            1000000,
+            None)
+        self.assertEqual(wh.question_uids_to_tags["path/question1"], "tag1")
+        self.assertEqual(wh.question_uids_to_tags["path/question2"], "tag2")
 
 
 if __name__ == '__main__':
