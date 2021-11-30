@@ -15,7 +15,8 @@ class QuestionSelector:
                  path_to_save_data_dir: Optional[Path] = None):
         self._paths_to_questions = paths_to_questions
         self._with_prune = with_prune
-        progress = QuestionSelector._load_saved_progress(path_to_save_data_dir)
+        self._path_to_save_file = QuestionSelector._resolve_path_to_save_file(path_to_save_data_dir)
+        progress = self._load_saved_progress()
         self.current_question_path: Optional[Path] = None
         self.history: List[Path] = []
         self._wh: Optional[WeightHandler] = None
@@ -70,24 +71,21 @@ class QuestionSelector:
             self._wh.reask(self.history[-1])
 
     @staticmethod
-    def _load_saved_progress(path_to_save_data_dir: Optional[Path] = None):
-        def _resolve_path_to_save_file():
-            if path_to_save_data_dir is not None:
-                if not path_to_save_data_dir.exists():
-                    path_to_save_data_dir.mkdir(parents=True)
-                elif not path_to_save_data_dir.is_dir():
-                    raise OSError("Specified path to save data is not a dir")
-            if path_to_save_data_dir is None:
-                path_to_save_data = "anki_progress.pkl"
-            else:
-                path_to_save_data = path_to_save_data_dir.joinpath("anki_progress.pkl")
-            return path_to_save_data
+    def _resolve_path_to_save_file(path_to_save_data_dir):
+        if path_to_save_data_dir is not None:
+            if not path_to_save_data_dir.exists():
+                path_to_save_data_dir.mkdir(parents=True)
+            elif not path_to_save_data_dir.is_dir():
+                raise OSError("Specified path to save data is not a dir")
+        if path_to_save_data_dir is None:
+            path_to_save_data = Path("anki_progress.pkl")
+        else:
+            path_to_save_data = path_to_save_data_dir.joinpath("anki_progress.pkl")
+        return path_to_save_data
 
-        path_to_save_data_file = _resolve_path_to_save_file()
-
-        progress_filepath = Path(path_to_save_data_file)
-        if progress_filepath.exists():
-            with open(progress_filepath, "rb") as fh:
+    def _load_saved_progress(self):
+        if self._path_to_save_file.exists():
+            with open(self._path_to_save_file, "rb") as fh:
                 anki_progress = pickle.load(fh)
                 if type(anki_progress) is not dict:
                     print("WARNING: progress data is corrupted, starting from scratch")
@@ -95,9 +93,9 @@ class QuestionSelector:
         return None
 
     def save_progress(self):
-        progress_filepath = Path("anki_progress.pkl")
+        progress_data = self._wh.get_savable_progress()
         try:
-            with open(progress_filepath, "wb") as fh:
-                pickle.dump(self._wh.get_savable_progress(), fh)
+            with open(self._path_to_save_file, "wb") as fh:
+                pickle.dump(progress_data, fh)
         except OSError:
             print("WARNING: Could not save progress data")
