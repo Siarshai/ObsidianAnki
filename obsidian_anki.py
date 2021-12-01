@@ -1,191 +1,16 @@
 import argparse
-from enum import Enum
 from pathlib import Path
 
-from function_selector import FunctionSelector
-from lite_state_machine import LiteStateMachine
+from states.on_answer_displayed import get_on_answer_displayed
+from states.on_question_displayed import get_on_question_displayed
+from states.on_question_required import get_on_question_required
+from states.on_statistics_shown import get_on_statistics_shown
+from states.state_enum import State
+from utils.lite_state_machine import LiteStateMachine
 from question_selector import QuestionSelector
 
 
-class State(str, Enum):
-    QUESTION_REQUIRED = "QUESTION_REQUIRED",
-    QUESTION_DISPLAYED = "QUESTION_DISPLAYED",
-    ANSWER_DISPLAYED = "ANSWER_DISPLAYED",
-    STATISTICS_SHOWN = "STATISTICS_SHOWN",
-    EXITING = "EXITING"
-
-
-def clear_screen():
-    print("\033[H\033[J")
-
-
-def get_on_question_required(selector):
-    def print_streak_message(streak):
-        if streak == 30:
-            print("That's 30 questions answered correctly in a row! Congratulations!\n---\n")
-        elif streak == 20:
-            print("That's 20 questions answered correctly in a row! Good job!\n---\n")
-        elif streak == 10:
-            print("That's 10 questions answered correctly in a row! Keep on going!\n---\n")
-
-    def on_question_required(state, context):
-        clear_screen()
-        print_streak_message(context.get("right_answers_streak", 0))
-        question, tag = selector.load_next_question()
-        print(tag, "/", question, end="")
-        return state.QUESTION_DISPLAYED
-
-    return on_question_required
-
-
-def get_on_question_displayed(selector):
-    def show_answer(*args, **kwargs):
-        try:
-            for line in selector.load_answer_for_current_question():
-                print(line, end="")
-            return State.ANSWER_DISPLAYED
-        except OSError as e:
-            print(f"WARNING: {str(e)}")
-            print("Have you renamed file while program was running?")
-            print("Restoring index...")
-            selector.reload_index()
-            return State.QUESTION_REQUIRED
-
-    function_selector = FunctionSelector()
-    function_selector.set_on_command_function(
-        ("c", "continue"),
-        show_answer,
-        "Show answer for displayed question")
-    function_selector.set_on_command_function(
-        ("n", "next"),
-        lambda *args, **kwargs: State.QUESTION_REQUIRED,
-        "Show next question")
-    function_selector.set_on_command_function(
-        ("s", "stats"),
-        lambda *args, **kwargs: State.STATISTICS_SHOWN,
-        "Show last answered questions and other statistics")
-    function_selector.set_on_command_function(
-        ("x", "exit"),
-        lambda *args, **kwargs: State.EXITING,
-        "Exit program, save data")
-    function_selector.set_on_command_function(
-        ("?", "help"),
-        lambda *args, **kwargs: print(function_selector.get_help()),
-        "Show this hint")
-
-    def on_question_displayed(state, context):
-        print("\n---")
-        command = input(f"Continue? {function_selector.get_hint()}\n")
-        try:
-            return function_selector(command, context=context)
-        except StopIteration:
-            print(f"Unknown command: {command}")
-            print(function_selector.get_help())
-        return None
-
-    return on_question_displayed
-
-
-def get_on_answer_displayed(selector):
-    def yes(*args, **kwargs):
-        ctx = kwargs["context"]
-        ctx["right_answers_streak"] = ctx.get("right_answers_streak", 0) + 1
-        selector.success_on_current_question()
-        return State.QUESTION_REQUIRED
-
-    def no(*args, **kwargs):
-        kwargs["context"]["right_answers_streak"] = 0
-        selector.fail_on_current_question()
-        return State.QUESTION_REQUIRED
-
-    def somewhat(*args, **kwargs):
-        selector.ambiguity_on_current_question()
-        return State.QUESTION_REQUIRED
-
-    function_selector = FunctionSelector()
-    function_selector.set_on_command_function(
-        ("y", "yes"),
-        yes,
-        "Answer was correct, this question will be shown less frequently")
-    function_selector.set_on_command_function(
-        ("s", "somewhat"),
-        somewhat,
-        "Answer was somewhat correct. Do not record question as failure, "
-        "but show a little more frequently (as in reask command)")
-    function_selector.set_on_command_function(
-        ("n", "no"),
-        no,
-        "Answer was not correct, this question will be shown more frequently")
-    function_selector.set_on_command_function(
-        ("x", "exit"),
-        lambda *args, **kwargs: State.EXITING,
-        "Exit program, save data")
-    function_selector.set_on_command_function(
-        ("?", "h", "help"),
-        lambda *args, **kwargs: print(function_selector.get_help()),
-        "Show this hint")
-
-    def on_answer_displayed(state, context):
-        print("\n---")
-        command = input(f"Was your answer right? {function_selector.get_hint()}\n")
-        try:
-            return function_selector(command, context=context)
-        except StopIteration:
-            print(f"Unknown command: {command}")
-            print(function_selector.get_help())
-        return None
-
-    return on_answer_displayed
-
-
-def get_on_statistics_shown(selector):
-    def pretty_print_statistics(*args, **kwargs):
-        statistics = selector.get_statistics()
-        print("Total answered questions: ", statistics["answered"])
-        print("Correctly: ", statistics["successes"])
-        print("Somewhat correctly: ", statistics["answered"] - statistics["failures"] - statistics["successes"])
-        print("Incorrectly: ", statistics["failures"])
-        return None
-
-    function_selector = FunctionSelector()
-    function_selector.set_on_command_function(
-        ("s", "statistics"),
-        pretty_print_statistics,
-        "Show more robust statistics over all answered questions")
-    function_selector.set_on_command_function(
-        ("r", "reask"),
-        lambda *args, **kwargs: selector.reask_last_question(),
-        "Reask last question after a little while (stacks)")
-    function_selector.set_on_command_function(
-        ("c", "continue"),
-        lambda *args, **kwargs: State.QUESTION_REQUIRED,
-        "Continue answering questions")
-    function_selector.set_on_command_function(
-        ("?", "h", "help"),
-        lambda *args, **kwargs: print(function_selector.get_help()),
-        "Show this hint")
-
-    def on_question_displayed(state, context):
-        print("\n---")
-        if selector.history:
-            print("\nLast answered questions:")
-            for question in selector.history[::-1]:
-                print(question)
-        else:
-            print("\nNo questions yet been answered")
-        print("\n---")
-        command = input(f"What to do next? {function_selector.get_hint()}\n")
-        try:
-            return function_selector(command, context=context)
-        except StopIteration:
-            print(f"Unknown command: {command}")
-            print(function_selector.get_help())
-        return None
-
-    return on_question_displayed
-    
-
-def main():
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prune",
                         help="Remove old records from progress data when encountered",
@@ -199,26 +24,31 @@ def main():
                         help="Directories to be recursively searched for .md files",
                         nargs="+")
     args = parser.parse_args()
+    return args
+
+
+def validate_and_convert_args(args):
     try:
-        paths_to_questions = [Path(p) for p in args.questions_dirs]
+        args.paths_to_questions = [Path(p) for p in args.questions_dirs]
     except Exception as e:
-        print(f"Could not convert questions_dirs to path: {str(e)}")
-        return -1
-    for dirpath in paths_to_questions:
+        raise ValueError("Could not convert questions_dirs to path") from e
+    for dirpath in args.paths_to_questions:
         if not dirpath.exists():
-            print(f"Path does not exist: {dirpath}")
-            return -1
+            raise OSError(f"Path does not exist: {dirpath}")
         if not dirpath.is_dir():
-            print(f"Path is not a directory: {str(dirpath)}")
-            return -1
+            raise OSError(f"Path is not a directory: {str(dirpath)}")
     try:
-        save_data_dir = Path(args.save_data_dir) if args.save_data_dir is not None else None
+        args.save_data_dir = Path(args.save_data_dir) if args.save_data_dir is not None else None
     except Exception as e:
-        print(f"Could not convert save_data_dir to path: {args.save_data_dir}: {str(e)}")
-        return -1
+        raise ValueError(f"Could not convert save_data_dir to path: {args.save_data_dir}") from e
+
+
+def main():
+    args = parse_args()
+    validate_and_convert_args(args)
 
     try:
-        qselector = QuestionSelector(paths_to_questions, args.prune, save_data_dir)
+        qselector = QuestionSelector(args.paths_to_questions, args.prune, args.save_data_dir)
     except RuntimeError as e:
         print(f"{str(e)}; specified paths: {', '.join(args.questions_dirs)}")
         return -1
